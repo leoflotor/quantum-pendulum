@@ -3,13 +3,7 @@
 import numpy as np
 import scipy as sp
 import matplotlib.pyplot as plt
-
-# from numpy.linalg import eig
-# from scipy.special import jv
-
 import numpy.linalg
-import scipy.special
-import scipy.interpolate
 
 
 # Initial values
@@ -30,6 +24,7 @@ t = lambda x: np.sqrt(Q) * np.exp(-x)
 ###############################################
 # Matrixes
 ###############################################
+
 
 def matrix_a_even(n: int):
 
@@ -61,7 +56,7 @@ def matrix_a_even(n: int):
     return vals[indx], vects[indx]
 
 
-def matrix_b_even(n):
+def matrix_b_even(n: int):
 
     diag = [(2*i)**2 for i in range(1, n+1)]
     matrix = np.zeros((n, n))
@@ -88,7 +83,7 @@ def matrix_b_even(n):
     return vals[indx], vects[indx]
 
 
-def matrix_a_odd(n):
+def matrix_a_odd(n: int):
 
     diag = [(1 + 2*i)**2 for i in range(n)]
     matrix = np.zeros((n, n))
@@ -97,12 +92,12 @@ def matrix_a_odd(n):
         matrix[i, i] = diag[i]
 
         if i + 1 < n:
-            matrix[i, i + 1] = q
+            matrix[i, i + 1] = Q
 
         if i > 0:
-            matrix[i, i - 1] = q
+            matrix[i, i - 1] = Q
 
-    matrix[0, 0] = 1 + q
+    matrix[0, 0] = 1 + Q
 
     # Unordered lists of eigen values and eigen vectors
     vals, vects = np.linalg.eig(matrix)
@@ -117,7 +112,7 @@ def matrix_a_odd(n):
     return vals[indx], vects[indx]
 
 
-def matrix_b_odd(n):
+def matrix_b_odd(n: int):
 
     diag = [(1 + 2*i)**2 for i in range(n)]
     matrix = np.zeros((n, n))
@@ -126,12 +121,12 @@ def matrix_b_odd(n):
         matrix[i, i] = diag[i]
 
         if i + 1 < n:
-            matrix[i, i + 1] = q
+            matrix[i, i + 1] = Q
 
         if i > 0:
-            matrix[i, i - 1] = q
+            matrix[i, i - 1] = Q
 
-    matrix[0, 0] = 1 - q
+    matrix[0, 0] = 1 - Q
 
     # Unordered lists of eigen values and eigen vectors
     vals, vects = np.linalg.eig(matrix)
@@ -149,3 +144,13 @@ def matrix_b_odd(n):
 ###############################################
 # Infinite series
 ###############################################
+
+# Even Mathieu function of period Pi
+def ce_even(n: int, vects: list , x: list):
+    sum = lambda i: np.sum([vect * np.cos(indx * (i - np.pi)) for indx, vect in enumerate(vects[n])])
+    return [sum(i) for i in x]
+
+
+def se_even(n: int, vects: list , x: list):
+    sum = lambda i: np.sum([vect * np.sin((indx + 1) * (i - np.pi)) for indx, vect in enumerate(vects[n])])
+    return [sum(i) for i in x]
