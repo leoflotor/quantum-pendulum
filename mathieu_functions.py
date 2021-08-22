@@ -13,12 +13,7 @@ L = 1.0
 H = 0.06
 
 U0 = M * G * L
-Q = 4 * M * L**2 * U0 / H**2
-
-
-# Bessel functions arguments s(x) & t(x)
-s = lambda x: np.sqrt(Q) * np.exp(x)
-t = lambda x: np.sqrt(Q) * np.exp(-x)
+Q = 4 * M * L ** 2 * U0 / H ** 2
 
 
 ###############################################
@@ -26,9 +21,10 @@ t = lambda x: np.sqrt(Q) * np.exp(-x)
 ###############################################
 
 
+# a0, a2, a4, ...
 def matrix_a_even(n: int):
 
-    diag = [(2*i)**2 for i in range(n)]
+    diag = [(2 * i) ** 2 for i in range(n)]
     matrix = np.zeros((n, n))
 
     for i in range(n):
@@ -52,13 +48,17 @@ def matrix_a_even(n: int):
     # Sorting the eigen values to match the ascending order
     # convention, with their respective eigen vectors
     indx = np.argsort(vals)
+    vals, vects = vals[indx], vects[indx]
 
-    return vals[indx], vects[indx]
+    vects[:, 0:1] = vects[:, 0:1] / np.sqrt(2)
+
+    return vals, vects
 
 
+# b2, b4, b6, ...
 def matrix_b_even(n: int):
 
-    diag = [(2*i)**2 for i in range(1, n+1)]
+    diag = [(2 * i) ** 2 for i in range(1, n + 1)]
     matrix = np.zeros((n, n))
 
     for i in range(n):
@@ -83,9 +83,10 @@ def matrix_b_even(n: int):
     return vals[indx], vects[indx]
 
 
+# a1, a3, a5, ...
 def matrix_a_odd(n: int):
 
-    diag = [(1 + 2*i)**2 for i in range(n)]
+    diag = [(1 + 2 * i) ** 2 for i in range(n)]
     matrix = np.zeros((n, n))
 
     for i in range(n):
@@ -112,9 +113,10 @@ def matrix_a_odd(n: int):
     return vals[indx], vects[indx]
 
 
+# b1, b3, b5, ...
 def matrix_b_odd(n: int):
 
-    diag = [(1 + 2*i)**2 for i in range(n)]
+    diag = [(1 + 2 * i) ** 2 for i in range(n)]
     matrix = np.zeros((n, n))
 
     for i in range(n):
@@ -145,12 +147,67 @@ def matrix_b_odd(n: int):
 # Infinite series
 ###############################################
 
+
 # Even Mathieu function of period Pi
-def ce_even(n: int, vects: list , x: list):
-    sum = lambda i: np.sum([vect * np.cos(indx * (i - np.pi)) for indx, vect in enumerate(vects[n])])
-    return [sum(i) for i in x]
+def ce_even(n: int, x: list, vects: list):
+    sum = lambda i: np.sum(
+        [element * np.cos(indx * (i - np.pi)) for indx, element in enumerate(vects[n])]
+    )
+    return np.array([sum(i) for i in x])
 
 
-def se_even(n: int, vects: list , x: list):
-    sum = lambda i: np.sum([vect * np.sin((indx + 1) * (i - np.pi)) for indx, vect in enumerate(vects[n])])
-    return [sum(i) for i in x]
+# Odd Mathieu function of period Pi
+def se_even(n: int, x: list, vects: list):
+    sum = lambda i: np.sum(
+        [element * np.sin(indx * (i - np.pi)) for indx, element in enumerate(vects[n])]
+    )
+    return np.array([sum(i) for i in x])
+
+
+###############################################
+# State related functions
+###############################################
+
+
+def mathieu_fourier(n: int, order: int):
+    # The order is used as to increase the accuracy of the characteristic
+    # values and the Fourier coefficients of the Mathieu functions
+    # Ce and Se
+
+    eig_vals_a, eig_vects_a = matrix_a_even(order)
+    eig_vals_b, eig_vects_b = matrix_b_even(order)
+
+    eig_vals = np.concatenate((eig_vals_a, eig_vals_b))
+    eig_vects = np.concatenate((eig_vects_a, eig_vects_b))
+
+    indx = np.argsort(eig_vals)
+    char_vals = eig_vals[indx]
+    fourier_coeff = eig_vects[indx]
+
+    # Still do not know if I should restrain the ammount of returned
+    # Fourier coefficients
+    return char_vals[:n], fourier_coeff[:n]
+
+
+def energy(val: float):
+    return (H ** 2 / (8 * M * L ** 2)) * val + U0
+
+
+def energy_crit(vals: list):
+    for indx, val in enumerate(vals):
+        if energy(val) > 2 * U0:
+            n_crit = indx - 1
+            break
+    return n_crit, energy(vals[n_crit])
+
+
+def phi(n: int, x: list, vects: list):
+    # norm_factor = np.sqrt(np.pi)
+    if n % 2 == 0:
+        return ce_even(n, x, vects)
+    else:
+        return se_even(n, x, vects)
+
+
+def gauss_coeff(nbar, n, sigma):
+    return np.exp(-((n - nbar) ** 2) / (2 * sigma))
